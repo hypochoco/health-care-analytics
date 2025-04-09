@@ -14,11 +14,13 @@ def main(filepath : str):
 	watch.stop()
 	print(inst_str)
 
+	solution = solver.branch_and_bound()
+
 	sol_dict ={
 		"Instance" : filename,
 		"Time" : str(watch.getElapsed()),
-		"Result" : "--",
-		"Solution" : "--"
+		"Result" : int(solution),
+		"Solution" : "OPT"
 	}
 	print(json.dumps(sol_dict))	
 
