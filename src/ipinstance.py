@@ -83,6 +83,7 @@ class IPInstance:
       if i not in assigned_variables and self.variables[i].solution_value < min_unassigned_variable_value:
         min_unassigned_variable_index = i
         min_unassigned_variable_value = self.variables[i].solution_value
+    if min_unassigned_variable_index == -1: raise Exception("[heuristic] out of variables exception")
     return min_unassigned_variable_index, 1, 0
 
   def branch_and_bound(self,):
