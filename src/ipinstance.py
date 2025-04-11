@@ -100,7 +100,7 @@ class IPInstance:
 
     # heuristic starting variable
     self.solve_lp()
-    next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name)
+    next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name_path)
     variable_index_stack.append(next_variable_index, assignment0)
     variable_index_stack.append(next_variable_index, assignment1)
     
@@ -131,7 +131,7 @@ class IPInstance:
           current_optimal_bound = branch_bound
           current_optimal_path = list(constraint_name_path) # for debugging purposes
       else: # branch case
-        next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name)
+        next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name_path)
         variable_index_stack.append(next_variable_index, assignment0)
         variable_index_stack.append(next_variable_index, assignment1)
     
