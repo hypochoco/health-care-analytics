@@ -12,10 +12,9 @@ def main(filepath : str):
 	watch.start()
 	solver = IPInstance(filepath)
 	inst_str = solver.toString()
+	cost, solution = solver.branch_and_bound()
 	watch.stop()
 	print(inst_str)
-
-	cost, solution = solver.branch_and_bound()
 
 	sol_dict ={
 		"Instance" : filename,
