@@ -49,11 +49,11 @@ class IPInstance:
 
   # notes
     # heuristic -> based on the number of decmials
-      # refine values until integral
     # branch and bound
       # solve and continue to add constraints
 
   def declare_base_variables_and_constraints(self,): # declare initial variables and constraints
+    # note: slow but works 
     self.variables = self.model.continuous_var_list(self.numTests, 0, 1)
     for i in range(self.numDiseases):
       for j in range(i+1, self.numDiseases):
@@ -62,28 +62,34 @@ class IPInstance:
         ) >= 1)
     self.model.minimize(self.model.scal_prod(terms=self.variables, coefs=self.costOfTest))
 
-  def solve_lp(self,): # solve the linear relaxation of the problem
+  def solve_lp(self,): # solve the linear relaxation of the problem, return cost 
     if self.model.solve():
       return self.model.objective_value
     else: return -1
 
-  def heuristic(self, constraint_name_path): 
-    # note: not a good heuristic
-    # first variable not in constraint path
-    current_constraints = [int(cn[:-1]) for cn in constraint_name_path]
+  def heuristic(self, constraint_name_path):
+
+    # # find the first unassigned variable
+    # current_constraints = [int(cn[:-1]) for cn in constraint_name_path]
+    # for i in range(self.numTests):
+    #   if i not in current_constraints: return i
+    # raise Exception("[heuristic] out of variables exception")
+
+    # assign the min value
+    min_unassigned_variable_index = -1
+    min_unassigned_variable_value = float("inf")
+    assigned_variables = set([int(cn[:-1]) for cn in constraint_name_path])
     for i in range(self.numTests):
-      if i not in current_constraints: return i
-    raise Exception("[heuristic] out of variables exception")
+      if i not in assigned_variables and self.variables[i].solution_value < min_unassigned_variable_value:
+        min_unassigned_variable_index = i
+        min_unassigned_variable_value = self.variables[i].solution_value
+    return min_unassigned_variable_index, 1, 0
 
   def branch_and_bound(self,):
     self.declare_base_variables_and_constraints() # initial problem declaration
 
-    # other approaches
-      # inital branch selection
-      # search over all decision variables? 
-
-    # debugging information
-    self.model.print_information()
+    # # debugging information
+    # self.model.print_information()
 
     # branch and bound 
     variable_index_stack = [] 
@@ -91,10 +97,11 @@ class IPInstance:
     current_optimal_bound = float("inf")
     current_optimal_path = [] # for debugging purposes
 
-    # note: which variable to start with?
-    random_index = random.choice(range(self.numTests)) # replace with heuristic
-    variable_index_stack.append((random_index, 0))
-    variable_index_stack.append((random_index, 1))
+    # heuristic starting variable
+    self.solve_lp()
+    next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name)
+    variable_index_stack.append(next_variable_index, assignment0)
+    variable_index_stack.append(next_variable_index, assignment1)
     
     while len(variable_index_stack)>0: # dfs 
 
@@ -123,21 +130,12 @@ class IPInstance:
           current_optimal_bound = branch_bound
           current_optimal_path = list(constraint_name_path) # for debugging purposes
       else: # branch case
-        # note: order based on their branch bound?
-        next_variable_index = self.heuristic(constraint_name_path)
-        variable_index_stack.append((next_variable_index, 0))
-        variable_index_stack.append((next_variable_index, 1))
+        next_variable_index, assignment0, assignment1 = self.heuristic(constraint_name)
+        variable_index_stack.append(next_variable_index, assignment0)
+        variable_index_stack.append(next_variable_index, assignment1)
     
     # # debugging information
     # print(current_optimal_path)
-
-    # # debugging validation
-    # valid = validate([(int(pair[:-1]), int(pair[-1])) for pair in current_optimal_path], self.A)
-    # print("valid?: ", valid)
-
-    # note:
-      # test this code to make sure that it all does what it should do... 
-      # e.g. are the matrices used correctly? nothing is flipped weird?
 
     return current_optimal_bound, [(int(pair[:-1]), int(pair[-1])) for pair in current_optimal_path]
   
