@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from model_timer import Timer
 from ipinstance import IPInstance
+from utils import validate
 
 def main(filepath : str):
 	
@@ -14,13 +15,14 @@ def main(filepath : str):
 	watch.stop()
 	print(inst_str)
 
-	solution = solver.branch_and_bound()
+	cost, solution = solver.branch_and_bound()
 
 	sol_dict ={
 		"Instance" : filename,
 		"Time" : str(watch.getElapsed()),
-		"Result" : int(solution),
-		"Solution" : "OPT"
+		"Result" : int(cost),
+		"Solution" : "OPT",
+		"Valid" : validate(solution, solver.A)
 	}
 	print(json.dumps(sol_dict))	
 

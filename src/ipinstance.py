@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy  as np
 from docplex.mp.model import Model
 import random
+from utils import validate
 
 @dataclass(frozen=True)
 class IPConfig:
@@ -55,9 +56,10 @@ class IPInstance:
   def declare_base_variables_and_constraints(self,): # declare initial variables and constraints
     self.variables = self.model.continuous_var_list(self.numTests, 0, 1)
     for i in range(self.numDiseases):
-      s = self.model.sum(self.variables[j]*self.A[j][i] for j in range(self.numTests))
-      self.model.add_constraint(s<=self.numTests-1)
-      self.model.add_constraint(s>=1)
+      for j in range(i+1, self.numDiseases):
+        self.model.add_constraint(self.model.sum(
+            self.variables[k]*abs(self.A[k][i]-self.A[k][j]) for k in range(self.numTests)
+        ) >= 1)
     self.model.minimize(self.model.scal_prod(terms=self.variables, coefs=self.costOfTest))
 
   def solve_lp(self,): # solve the linear relaxation of the problem
@@ -67,7 +69,6 @@ class IPInstance:
 
   def heuristic(self, constraint_name_path): 
     # note: not a good heuristic
-
     # first variable not in constraint path
     current_constraints = [int(cn[:-1]) for cn in constraint_name_path]
     for i in range(self.numTests):
@@ -97,8 +98,8 @@ class IPInstance:
     
     while len(variable_index_stack)>0: # dfs 
 
-      # debugging
-      print(variable_index_stack)
+      # # debugging
+      # print(variable_index_stack)
 
       # branch on next constraint on stack, backtrack if necessary
       variable_index, value = variable_index_stack.pop()
@@ -127,10 +128,18 @@ class IPInstance:
         variable_index_stack.append((next_variable_index, 0))
         variable_index_stack.append((next_variable_index, 1))
     
-    # debugging information
-    print(current_optimal_path)
+    # # debugging information
+    # print(current_optimal_path)
 
-    return current_optimal_bound
+    # # debugging validation
+    # valid = validate([(int(pair[:-1]), int(pair[-1])) for pair in current_optimal_path], self.A)
+    # print("valid?: ", valid)
+
+    # note:
+      # test this code to make sure that it all does what it should do... 
+      # e.g. are the matrices used correctly? nothing is flipped weird?
+
+    return current_optimal_bound, [(int(pair[:-1]), int(pair[-1])) for pair in current_optimal_path]
   
   def toString(self):
     out = ""
